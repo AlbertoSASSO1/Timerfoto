@@ -34,6 +34,8 @@ class _TimerAppState extends State<TimerApp> {
   String? _selectedFileUrl;
   int _remainingSeconds = 60;
   Timer? _timer;
+  List<Offset?> _handwritingPoints = [];
+  bool _showHandwritingPad = false;
 
   void _startCountdown() {
     int? customMinutes = int.tryParse(_timeController.text);
@@ -129,6 +131,18 @@ class _TimerAppState extends State<TimerApp> {
     sound.play();
   }
 
+  void _clearHandwriting() {
+    setState(() {
+      _handwritingPoints.clear();
+    });
+  }
+
+  void _toggleHandwritingPad() {
+    setState(() {
+      _showHandwritingPad = !_showHandwritingPad;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -200,6 +214,48 @@ class _TimerAppState extends State<TimerApp> {
                     fit: BoxFit.cover,
                   ),
                 ),
+              SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: _toggleHandwritingPad,
+                icon: Icon(_showHandwritingPad ? Icons.visibility_off : Icons.edit),
+                label: Text(_showHandwritingPad ? "Nascondi Scrittura" : "Cervello Grafologico"),
+              ),
+              if (_showHandwritingPad) ...[
+                SizedBox(height: 10),
+                Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.white, width: 2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: GestureDetector(
+                    onPanUpdate: (details) {
+                      setState(() {
+                        RenderBox renderBox = context.findRenderObject() as RenderBox;
+                        _handwritingPoints.add(
+                          renderBox.globalToLocal(details.globalPosition),
+                        );
+                      });
+                    },
+                    onPanEnd: (details) {
+                      setState(() {
+                        _handwritingPoints.add(null);
+                      });
+                    },
+                    child: CustomPaint(
+                      painter: HandwritingPainter(_handwritingPoints),
+                      size: Size.infinite,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 10),
+                ElevatedButton.icon(
+                  onPressed: _clearHandwriting,
+                  icon: Icon(Icons.clear),
+                  label: Text("Cancella Scrittura"),
+                ),
+                SizedBox(height: 10),
+              ],
               DropdownButtonFormField(
                 items: _friends
                     .map((friend) => DropdownMenuItem(
@@ -233,5 +289,30 @@ class _TimerAppState extends State<TimerApp> {
         ),
       ),
     );
+  }
+}
+
+class HandwritingPainter extends CustomPainter {
+  final List<Offset?> points;
+
+  HandwritingPainter(this.points);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 3.0;
+
+    for (int i = 0; i < points.length - 1; i++) {
+      if (points[i] != null && points[i + 1] != null) {
+        canvas.drawLine(points[i]!, points[i + 1]!, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(HandwritingPainter oldDelegate) {
+    return oldDelegate.points != points;
   }
 }

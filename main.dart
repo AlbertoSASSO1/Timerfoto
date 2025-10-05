@@ -228,23 +228,23 @@ class _TimerAppState extends State<TimerApp> {
                     border: Border.all(color: Colors.white, width: 2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: GestureDetector(
-                    onPanUpdate: (details) {
-                      setState(() {
-                        RenderBox renderBox = context.findRenderObject() as RenderBox;
-                        _handwritingPoints.add(
-                          renderBox.globalToLocal(details.globalPosition),
-                        );
-                      });
-                    },
-                    onPanEnd: (details) {
-                      setState(() {
-                        _handwritingPoints.add(null);
-                      });
-                    },
-                    child: CustomPaint(
-                      painter: HandwritingPainter(_handwritingPoints),
-                      size: Size.infinite,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: GestureDetector(
+                      onPanUpdate: (details) {
+                        setState(() {
+                          _handwritingPoints.add(details.localPosition);
+                        });
+                      },
+                      onPanEnd: (details) {
+                        setState(() {
+                          _handwritingPoints.add(null);
+                        });
+                      },
+                      child: CustomPaint(
+                        painter: HandwritingPainter(_handwritingPoints),
+                        size: Size.infinite,
+                      ),
                     ),
                   ),
                 ),
